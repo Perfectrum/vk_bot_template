@@ -17,6 +17,21 @@ def choose(data, token, last_message_id):
     if user_message in last_message['expect']:
         child_id = last_message['expect'].index(user_message)
         last_message_id = last_message['children'][child_id]
+
+        vk_api.send_message(user_id, token, last_message_id)
+
+    else:
+        vk_api.send_message(user_id, token, error_message)
+    return last_message_id
+
+# обработчик сообщений типа 2
+def save(data, token, last_message_id):
+    user_message = data['object']['body']
+    user_id = data['object']['user_id']
+    last_message = behavior[last_message_id]
+    if user_message in last_message['expect']:
+        child_id = last_message['expect'].index(user_message)
+        last_message_id = last_message['children'][child_id]
     else:
         vk_api.send_message(user_id, token, error_message)
     return last_message_id
