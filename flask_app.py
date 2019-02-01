@@ -9,11 +9,12 @@ app = Flask(__name__)
 
 # Подключение к бд, тупо шаблон
 SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
-                                                                                                        username="perfectrum",
-                                                                                                        password="qwertyuiop",
-                                                                                                        hostname="perfectrum.mysql.pythonanywhere-services.com",
-                                                                                                        databasename="perfectrum$Main",
-                                                                                                            )
+                                                                                                         username="perfectrum",
+                                                                                                         password="qwertyuiop",
+                                                                                                         hostname="perfectrum.mysql.pythonanywhere-services.com",
+                                                                                                         databasename="perfectrum$Main",
+                                                                                                         )
+
 app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -40,7 +41,7 @@ def processing():
     elif data['type'] == 'message_new':
         user_id = data['object']['user_id']
         if user_id > 0:   # если пришло сообщение от пользователя
-            body = data['object']['body']
+            last_message = data['object']['body']
 
             check = Last_message.query.filter_by(user_id=user_id).all()
 
@@ -49,15 +50,26 @@ def processing():
                 lm.session.add(tab) # Добавляем в таблицу
                 lm.session.commit() # Закрываем транзакцию
                 last_message = start_message_id
+                vk_api.send_message(user_id, token, last_message)
             elif len(check) == 1:
                 last_message = check[0].message
 
-
             # сюда будем вписывать реакции на сообщения пользователя
-            if behavior[last_message]['type'] == 0:
+            type = behavior[last_message]['type']
+            if type == 0:
                 message = message_handler.simple(data, last_message)
                 Last_message.query.filter_by(user_id=user_id).update({'message':message})
                 lm.session.commit()
+            elif type == 1:
+                message = message_handler.choose(data, last_message)
+                Last_message.query.filter_by(user_id=user_id).update({'message':message})
+                lm.session.commit()
+                vk_api.send_message(user_id, token, 'HELP')
+            elif type == 2:
+                message = message_handler.save(data, last_message)
+                Last_message.query.filter_by(user_id=user_id).update({'message':message})
+                lm.session.commit()
 
+            message_handler.create_answer(data, token, message)
 
         return 'ok'
