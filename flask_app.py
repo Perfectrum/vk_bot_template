@@ -64,7 +64,6 @@ def processing():
                 message = message_handler.choose(data, last_message)
                 Last_message.query.filter_by(user_id=user_id).update({'message':message})
                 lm.session.commit()
-                vk_api.send_message(user_id, token, 'HELP')
             elif type == 2:
                 message = message_handler.save(data, last_message)
                 Last_message.query.filter_by(user_id=user_id).update({'message':message})
